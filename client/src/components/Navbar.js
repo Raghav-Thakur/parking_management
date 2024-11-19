@@ -4,7 +4,7 @@ import '../styles/Navbar.css'; // Create this CSS file for styling
 export const Navbar = () => {
     return (
         <nav className="navbar">
-            <h1>My App</h1>
+            <h1>Parking App</h1>
             <ul>
                 <li><a href="/">Home</a></li>
                 <li><a href="/register">Register</a></li>

@@ -1,10 +1,16 @@
+// Footer.js
 import React from 'react';
-import '../styles/Footer.css'; // Create this CSS file for styling
+import '../styles/Footer.css'; // Import the CSS file
 
 export const Footer = () => {
     return (
-        <footer className="footer">
-            <p>&copy; 2023 My App. All rights reserved.</p>
+        <footer>
+            <div className="footer-content">
+                <p>&copy; {new Date().getFullYear()} Thakur Ji. All rights reserved.</p>
+                <p>
+                    <a href="/privacy">Privacy Policy</a> | <a href="/terms">Terms of Service</a>
+                </p>
+            </div>
         </footer>
     );
 };
