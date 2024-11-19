@@ -1,18 +1,25 @@
-import './App.css';
+import React from 'react';
+import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import { Navbar } from './components/Navbar';
 import { Footer } from './components/Footer';
+import { Login } from './components/Login';
+import { Register } from './components/Register';
 
 function App() {
   return (
-    <div className="App">
-      <Navbar />
-      <div className="content">
-        {/* Add your main content here */}
-        <h1>Welcome to the App!</h1>
-        <p>This is the main content of the application.</p>
+    <Router>
+      <div className="App">
+        <Navbar />
+        <div className="content">
+          <Routes>
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/" element={<h2>Welcome to My App</h2>} />
+          </Routes>
+        </div>
+        <Footer />
       </div>
-      <Footer />
-    </div>
+    </Router>
   );
 }
 
