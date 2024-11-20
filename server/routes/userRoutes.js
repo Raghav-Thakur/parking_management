@@ -5,4 +5,5 @@ const userController = require('../controllers/userController');
 // Define the POST route for user registration
 router.post('/register', userController.registerUser );
 router.get('/AllUsers', userController.getAllUsers );
+router.post('/login', userController.loginUser );
 module.exports = router;
