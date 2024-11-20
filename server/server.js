@@ -1,26 +1,18 @@
-// server.js
-const express = require("express");
-const cors = require("cors");
+const express = require('express');
+const mongoose = require('mongoose');
+const userRoutes = require('./routes/userRoutes'); // Adjust the path as necessary
 const dotenv = require("dotenv");
-const connectDb = require("./config/dbConnection"); // Adjust the path if necessary
-
-dotenv.config(); // Load environment variables from .env file
-
-const app = express();
-app.use(cors());
-app.use(express.json());
-
-const PORT = process.env.PORT || 5000;
-
-// Connect to MongoDB
+const connectDb = require("./config/dbConnection");
 connectDb();
 
-// Define a simple route for testing
-app.get("/", (req, res) => {
-    res.send("Hello, World!");
-});
+const app = express();
+const PORT = process.env.PORT || 5500;
+
+// Middleware
+app.use(express.json()); // To parse JSON bodies
+app.use('/api', userRoutes); // Use the user routes
 
 // Start the server
 app.listen(PORT, () => {
-    console.log(`Server running on port http://localhost:${PORT}`);
+    console.log(`Server is running on http://localhost:${PORT}`);
 });

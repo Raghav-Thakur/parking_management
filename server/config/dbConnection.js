@@ -1,22 +1,28 @@
-// Import the mongoose library
 const mongoose = require("mongoose");
+require('dotenv').config();
 
-// Create a function to connect to MongoDB
 const connectDb = async () => {
     try {
-        // Connect to MongoDB using the connection string from environment variables
+        if (!process.env.CONNECTION_STRING) {
+            console.error("MongoDB connection string is not set in environment variables.");
+            process.exit(1);
+        }
+
         const connection = await mongoose.connect(process.env.CONNECTION_STRING);
-        
-        // Log a success message upon successful connection
-        console.log("MongoDB connected successfully");
+
+        console.log(`MongoDB connected: ${connection.connection.host}`);
     } catch (error) {
-        // Log any errors that occur during connection
-        console.log("Error connecting to MongoDB:", error);
-        
-        // Exit the process with failure status
+        console.error("Error connecting to MongoDB:", error.message);
+        console.error(error.stack);
         process.exit(1);
     }
+
+    process.on("SIGINT", async () => {
+        console.log("SIGINT signal received: closing MongoDB connection...");
+        await mongoose.connection.close();
+        console.log("MongoDB connection closed.");
+        process.exit(0);
+    });
 };
 
-// Export the connectDb function for use in other files
 module.exports = connectDb;
