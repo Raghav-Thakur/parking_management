@@ -1,5 +1,6 @@
 const ParkingSlot = require('../models/parkingModel');
-const User = require('../models/userModel'); // Assuming you have a User model
+const User = require('../models/userModel');
+const walletController = require('./walletController');
 
 // Initialize parking slots (call this function once when the server starts)
 const initializeParkingSlots = async () => {
@@ -21,9 +22,6 @@ const initializeParkingSlots = async () => {
     }
 };
 
-
-
-
 // Allot a parking slot
 const allotParkingSlot = async (req, res) => {
     const { userEmail, vehicleType, vehicleNumber, fuelType, startTime } = req.body;
@@ -37,7 +35,7 @@ const allotParkingSlot = async (req, res) => {
         // Check if user exists
         const user = await User.findOne({ email: userEmail });
         if (!user) {
-            return res.status(404).json({ message: "User  not found" });
+            return res.status(404).json({ message: "User not found" });
         }
 
         // Find the first available slot
@@ -49,8 +47,8 @@ const allotParkingSlot = async (req, res) => {
                     vehicleType,
                     vehicleNumber,
                     fuelType,
-                    startTime: new Date(startTime), // Store the provided start time
-                    userEmail, // Store the user email for reference
+                    startTime: new Date(startTime),
+                    userEmail,
                 },
             },
             { new: true } // Return the updated document
@@ -69,50 +67,62 @@ const allotParkingSlot = async (req, res) => {
 
 // Deallocate a parking slot
 const deallocateParkingSlot = async (req, res) => {
-    const { slotNumber } = req.params; // Slot number is passed as a parameter
-    const { endTime } = req.body; // End time is passed in the request body
+    const { slotNumber } = req.params;
+    const { endTime } = req.body; // Get endTime from request body
 
+    // Validate input
+    if (!slotNumber) {
+        return res.status(400).json({ message: "slotNumber is required" });
+    }
     if (!endTime) {
-        return res.status(400).json({ message: "End time is required" });
+        return res.status(400).json({ message: "endTime is required" });
     }
 
     try {
-        const slot = await ParkingSlot.findOne({ slotNumber });
-        if (!slot || !slot.isOccupied) {
-            return res.status(400).json({ message: "Slot is already free or does not exist" });
+        // Find the parking slot by slot number
+        const slot = await ParkingSlot.findOne({ slotNumber, isOccupied: true });
+        if (!slot) {
+            return res.status(404).json({ message: "Slot not found or already free" });
         }
 
-        // Set the end time
-        slot.endTime = new Date(endTime); // Store the provided end time
+        // Parse the endTime from the request body
+        const parsedEndTime = new Date(endTime);
+        if (isNaN(parsedEndTime)) {
+            return res.status(400).json({ message: "Invalid endTime format" });
+        }
 
-        // Calculate the time taken
-        const parkedTime = slot.endTime - slot.startTime; // Time in milliseconds
-        const hours = Math.floor(parkedTime / (1000 * 60 * 60)); // Convert to hours
-        const minutes = Math.floor((parkedTime % (1000 * 60 * 60)) / (1000 * 60)); // Convert to minutes
+        // Calculate parking duration and fee
+        const parkedDuration = Math.ceil((parsedEndTime - slot.startTime) / (1000 * 60)); // Duration in minutes
+        const parkingFee = Math.ceil(parkedDuration / 60) * 10; // $10 per hour
 
-        // Clear the slot
+        // Deduct fee from user's wallet
+        const deductResponse = await walletController.deductMoney({ body: { email: slot.userEmail, amount: parkingFee } });
+        if (deductResponse.status !== 200) {
+            return res.status(deductResponse.status).json(deductResponse.data);
+        }
+
+        // Deallocate the parking slot
         slot.isOccupied = false;
         slot.vehicleType = null;
         slot.vehicleNumber = null;
         slot.fuelType = null;
         slot.startTime = null;
         slot.endTime = null;
-        slot.userEmail = null; // Clear user email
+        slot.userEmail = null;
         await slot.save();
 
-        // Return only the time taken
+        // Respond with success and parking details
         res.status(200).json({
-            message: "Parking slot deallocated",
-            duration: {
-                hours,
-                minutes,
-            },
+            message: "Parking slot deallocated successfully",
+            duration: `${Math.floor(parkedDuration / 60)} hours and ${parkedDuration % 60} minutes`,
+            fee: parkingFee
         });
     } catch (error) {
         console.error("Error deallocating parking slot:", error);
         res.status(500).json({ message: "Error deallocating parking slot", error: error.message });
     }
 };
+
 
 // Get all parking slots
 const getAllParkingSlots = async (req, res) => {
@@ -131,6 +141,5 @@ const getAllParkingSlots = async (req, res) => {
         res.status(500).json({ message: "Error fetching parking slots", error: error.message });
     }
 };
-
 
 module.exports = { initializeParkingSlots, allotParkingSlot, deallocateParkingSlot, getAllParkingSlots };

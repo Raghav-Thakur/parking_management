@@ -18,6 +18,7 @@ const getWallet = async (req, res) => {
         }
         res.status(200).json(wallet);
     } catch (error) {
+        console.error("Error fetching wallet:", error);
         res.status(500).json({ message: "Server error", error: error.message });
     }
 };
@@ -30,13 +31,13 @@ const addMoney = async (req, res) => {
     if (!email || typeof email !== 'string') {
         return res.status(400).json({ message: "Invalid email" });
     }
-    if (amount === undefined || typeof amount !== 'number') {
+    if (amount === undefined || typeof amount !== 'number' || amount <= 0) {
         return res.status(400).json({ message: "Invalid amount" });
     }
 
     try {
         // Check if the user exists
-        const user = await User.findOne({ email: email });
+        const user = await User.findOne({ email });
         if (!user) {
             return res.status(404).json({ message: "User  not found" });
         }
@@ -55,27 +56,35 @@ const addMoney = async (req, res) => {
 
         res.status(200).json({ message: "Money added successfully", new_balance: wallet.balance });
     } catch (error) {
+        console.error("Error adding money to wallet:", error);
         res.status(500).json({ message: "Server error", error: error.message });
     }
 };
 
 // Deduct money from wallet by email
 const deductMoney = async (req, res) => {
-    const { email, amount } = req.body; // Get email and amount from request body
+    const { email, amount } = req.body;
+
     try {
-        // Find the wallet using the user's email
+        // Find the user's wallet
         const wallet = await Wallet.findOne({ userEmail: email });
         if (!wallet) {
-            return res.status(404).json({ message: "Wallet not found" });
+            return { status: 404, data: { message: "Wallet not found" } }; // Return an object
         }
+
+        // Check if the wallet has sufficient balance
         if (wallet.balance < amount) {
-            return res.status(400).json({ message: "Insufficient funds" });
+            return { status: 400, data: { message: "Insufficient balance" } }; // Return an object
         }
+
+        // Deduct the amount
         wallet.balance -= amount;
         await wallet.save();
-        res.status(200).json({ message: "Money deducted successfully", new_balance: wallet.balance });
+
+        return { status: 200, data: { message: "Amount deducted successfully", newBalance: wallet.balance } }; // Return an object
     } catch (error) {
-        res.status(500).json({ message: "Server error", error: error.message });
+        console.error("Error deducting money:", error);
+        return { status: 500, data: { message: "Error deducting money", error: error.message } }; // Return an object
     }
 };
 
