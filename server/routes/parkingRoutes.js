@@ -4,7 +4,7 @@ const parkingController = require('../controllers/parkingController');
 const router = express.Router();
 
 // Initialize parking slots (call this when the server starts)
-parkingController.initializeParkingSlots();
+// parkingController.initializeParkingSlots();
 
 // Allot a parking slot
 router.post('/allot', parkingController.allotParkingSlot);

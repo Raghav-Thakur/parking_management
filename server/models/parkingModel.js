@@ -1,34 +1,14 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
-const ParkingSlotSchema = new mongoose.Schema({
-    slotNumber: {
-        type: Number,
-        required: true,
-        unique: true,
-    },
-    isOccupied: {
-        type: Boolean,
-        default: false,
-    },
-    vehicleType: {
-        type: String,
-        enum: ['car', 'motorcycle', 'truck'],
-        default: null,
-    },
-    vehicleNumber: {
-        type: String,
-        unique: true,
-    },
-    fuelType: {
-        type: String,
-        enum: ['petrol', 'diesel', 'electric'],
-        default: null,
-    },
-    timestamp: {
-        type: Date,
-        default: null,
-    },
+const parkingSlotSchema = new mongoose.Schema({
+  slotNumber: { type: Number, required: true },
+  isOccupied: { type: Boolean, default: false },
+  vehicleType: { type: String, default: null },
+  vehicleNumber: { type: String, default: null }, // Remove `unique: true` here
+  fuelType: { type: String, default: null },
+  startTime: { type: Date, default: null },
+  endTime: { type: Date, default: null },
+  userEmail: { type: String, default: null },
 });
 
-const ParkingSlot = mongoose.model('ParkingSlot', ParkingSlotSchema);
-module.exports = ParkingSlot;
+module.exports = mongoose.model("ParkingSlot", parkingSlotSchema);

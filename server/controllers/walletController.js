@@ -11,8 +11,8 @@ const getWallet = async (req, res) => {
             return res.status(404).json({ message: "User  not found" });
         }
 
-        // Find the wallet using the user's ID
-        const wallet = await Wallet.findOne({ user: user._id });
+        // Find the wallet using the user's email
+        const wallet = await Wallet.findOne({ userEmail: email });
         if (!wallet) {
             return res.status(404).json({ message: "Wallet not found" });
         }
@@ -25,19 +25,34 @@ const getWallet = async (req, res) => {
 // Add money to wallet by email
 const addMoney = async (req, res) => {
     const { email, amount } = req.body; // Get email and amount from request body
+
+    // Validate input
+    if (!email || typeof email !== 'string') {
+        return res.status(400).json({ message: "Invalid email" });
+    }
+    if (amount === undefined || typeof amount !== 'number') {
+        return res.status(400).json({ message: "Invalid amount" });
+    }
+
     try {
-        // Find the user by email
-        const user = await User.findOne({ email });
+        // Check if the user exists
+        const user = await User.findOne({ email: email });
         if (!user) {
             return res.status(404).json({ message: "User  not found" });
         }
 
-        // Update or create the wallet
+        // Update or create the wallet using the user's email
         const wallet = await Wallet.findOneAndUpdate(
-            { user: user._id },
+            { userEmail: email },
             { $inc: { balance: amount } },
-            { new: true, upsert: true } // Create wallet if it doesn't exist
+            { new: true, upsert: true, setDefaultsOnInsert: true } // Create wallet if it doesn't exist
         );
+
+        // If the wallet was created, ensure the balance is initialized
+        if (!wallet.balance) {
+            wallet.balance = amount; // Set the initial balance if it was just created
+        }
+
         res.status(200).json({ message: "Money added successfully", new_balance: wallet.balance });
     } catch (error) {
         res.status(500).json({ message: "Server error", error: error.message });
@@ -48,14 +63,8 @@ const addMoney = async (req, res) => {
 const deductMoney = async (req, res) => {
     const { email, amount } = req.body; // Get email and amount from request body
     try {
-        // Find the user by email
-        const user = await User.findOne({ email });
-        if (!user) {
-            return res.status(404).json({ message: "User  not found" });
-        }
-
-        // Find the wallet using the user's ID
-        const wallet = await Wallet.findOne({ user: user._id });
+        // Find the wallet using the user's email
+        const wallet = await Wallet.findOne({ userEmail: email });
         if (!wallet) {
             return res.status(404).json({ message: "Wallet not found" });
         }
@@ -70,4 +79,8 @@ const deductMoney = async (req, res) => {
     }
 };
 
-module.exports = { getWallet, addMoney, deductMoney };
+module.exports = {
+    getWallet,
+    addMoney,
+    deductMoney,
+};
