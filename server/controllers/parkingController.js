@@ -1,6 +1,23 @@
 const ParkingSlot = require('../models/parkingModel');
 const User = require('../models/userModel');
 const walletController = require('./walletController');
+const pricingStructure = {
+    "Car": {
+        "Petrol": 10,
+        "Diesel": 12,
+        "Electric": 8
+    },
+    "Bike": {
+        "Petrol": 5,
+        "Diesel": 6,
+        "Electric": 4
+    },
+    "Truck": {
+        "Petrol": 15,
+        "Diesel": 18,
+        "Electric": 14
+    }
+};
 
 // Initialize parking slots (call this function once when the server starts)
 const initializeParkingSlots = async () => {
@@ -68,7 +85,7 @@ const allotParkingSlot = async (req, res) => {
 // Deallocate a parking slot
 const deallocateParkingSlot = async (req, res) => {
     const { slotNumber } = req.params;
-    const { endTime } = req.body; // Get endTime from request body
+    const { endTime } = req.body;
 
     // Validate input
     if (!slotNumber) {
@@ -91,9 +108,19 @@ const deallocateParkingSlot = async (req, res) => {
             return res.status(400).json({ message: "Invalid endTime format" });
         }
 
-        // Calculate parking duration and fee
+        // Calculate parking duration in minutes
         const parkedDuration = Math.ceil((parsedEndTime - slot.startTime) / (1000 * 60)); // Duration in minutes
-        const parkingFee = Math.ceil(parkedDuration / 60) * 10; // $10 per hour
+
+        // Calculate parking fee based on vehicle type and fuel type
+        const vehicleType = slot.vehicleType;
+        const fuelType = slot.fuelType;
+
+        const hourlyRate = pricingStructure[vehicleType]?.[fuelType];
+        if (!hourlyRate) {
+            return res.status(400).json({ message: "Invalid vehicle type or fuel type" });
+        }
+
+        const parkingFee = Math.ceil(parkedDuration / 60) * hourlyRate; // Fee calculation
 
         // Deduct fee from user's wallet
         const deductResponse = await walletController.deductMoney({ body: { email: slot.userEmail, amount: parkingFee } });
