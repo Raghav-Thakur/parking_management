@@ -4,18 +4,18 @@ const walletController = require('./walletController');
 const pricingStructure = {
     "Car": {
         "Petrol": 10,
-        "Diesel": 12,
-        "Electric": 8
+        "Diesel": 15,
+        "Electric": 5
     },
     "Bike": {
         "Petrol": 5,
         "Diesel": 6,
-        "Electric": 4
+        "Electric": 2
     },
     "Truck": {
         "Petrol": 15,
-        "Diesel": 18,
-        "Electric": 14
+        "Diesel": 20,
+        "Electric": 10.
     }
 };
 
